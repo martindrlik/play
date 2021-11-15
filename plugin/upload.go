@@ -1,15 +1,11 @@
 package plugin
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path"
-	"strconv"
-
-	"github.com/martindrlik/play/sequence"
 )
 
 var (
@@ -22,38 +18,49 @@ func Upload(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "max upload file length exceeded", http.StatusBadRequest)
 		return
 	}
-	name := uploadName(sequence.Get(r.Context()))
-	dir := path.Dir(name)
+
+	name, ok := tryGetName(rw, r)
+	if !ok {
+		return
+	}
+	dir, goFile, soFile := dirFileNames(name)
 	if !tryMakeDirAll(rw, dir) {
 		return
 	}
-	goFile := name + ".go"
 	if !tryUpload(rw, r, goFile) {
 		return
 	}
 	if !tryBuild(rw, goFile) {
 		return
 	}
-	soFile := name + ".so"
 	main, ok := tryLookup(rw, soFile)
 	if !ok {
 		return
 	}
 
-	key := path.Base(name)
-	func() {
-		pluginsMutex.Lock()
-		defer pluginsMutex.Unlock()
-		plugins[key] = main
-	}()
-	fmt.Fprintf(rw, "/run/%s", key)
+	pluginsMutex.Lock()
+	defer pluginsMutex.Unlock()
+	plugins[name] = main
 }
 
-func uploadName(seq int64) string {
-	return path.Join(
+func tryGetName(rw http.ResponseWriter, r *http.Request) (name string, ok bool) {
+	name = r.URL.Path[len("/upload"):]
+	if name == "" {
+		http.Error(rw, "usage /upload/example", http.StatusBadRequest)
+		return "", false
+	}
+	return name, true
+}
+
+func dirFileNames(name string) (dir, goFile, soFile string) {
+	s := path.Join(
 		os.Getenv("GOPATH"),
 		"src/github.com/martindrlik/play/plugins", // TODO better path
-		strconv.FormatInt(seq, 36))
+		name)
+	dir = path.Dir(s)
+	goFile = s + ".go"
+	soFile = s + ".so"
+	return
 }
 
 func tryMakeDirAll(rw http.ResponseWriter, dir string) bool {

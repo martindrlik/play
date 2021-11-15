@@ -1,18 +1,15 @@
 package plugin
 
 import (
-	"log"
 	"net/http"
-	"path"
 )
 
 func Run(rw http.ResponseWriter, r *http.Request) {
-	key := path.Base(r.URL.Path)
-	log.Print(key)
+	name := r.URL.Path
 	main, ok := func() (main func(http.ResponseWriter, *http.Request), ok bool) {
 		pluginsMutex.Lock()
 		defer pluginsMutex.Unlock()
-		main, ok = plugins[key]
+		main, ok = plugins[name]
 		return
 	}()
 	if !ok {

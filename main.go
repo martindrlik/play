@@ -18,8 +18,8 @@ var (
 )
 
 func main() {
-	http.HandleFunc("/upload", mc5(plugin.Upload))
-	http.HandleFunc("/run/", mc5(plugin.Run))
+	http.HandleFunc("/upload/", mc5(plugin.Upload))
+	http.HandleFunc("/", mc5(plugin.Run))
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 

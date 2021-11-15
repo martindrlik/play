@@ -1,33 +1,40 @@
 # play
 
-Play is my pet project where I play with web server architecture. It is a http server that allows to upload go file which is then built as plugin and runs by calling url path returned by `/upload` api. Uploaded go file is expected to have `func Main(http.ResponseWriter, *http.Request)` in main package. The function will be called by `/run/{token}` api.
+Play is a http server that allows you to create api by uploading go file. Go file is then built as a plugin and it is ready to be called on specified path.
+
+## api
+
+### /upload/{specified/path}
+
+Uploads go file and makes it ready for calling. After /upload there should be a path on which you can then call that "uploaded api".
 
 ## Example
 
-Start web server and upload following go file by using `/upload` api.
+Start play web server. Create a go file called `hello.go` with following or similar content. Note that it is only expected to be main package with Main function.
 
 ```go
 package main
 
 import (
-    "fmt"
-    "net/http"
+	"fmt"
+	"net/http"
 )
 
 func Main(rw http.ResponseWriter, r *http.Request) {
-    fmt.Fprintln(rw, "Hello, world!")
+	name := r.FormValue("name")
+	fmt.Fprintf(rw, "Hello, %s!\n", name)
 }
 ```
 
-Response is a path to be used for calling `Main` function of that uploaded file. Response example:
-
-```text
-/run/rt
-```
-
-Finally call `/run/{token}` api to execute that `Main` function:
+Upload that file. We can use `curl` for instance.
 
 ```zsh
-% curl http://:8080/run/rt
-Hello, world!
+% curl --data-binary @hello.go http://localhost:8085/upload/say/hello
+```
+
+Note that `/upload/{specified/path}` is `/upload/say/hello`. `/say/hello` is going to be path for calling that "uploaded api".
+
+```zsh
+% curl "http://localhost:8085/say/hello?name=Gopher"
+Hello, Gopher!
 ```
