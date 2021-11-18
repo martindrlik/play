@@ -23,7 +23,10 @@ func Upload(rw http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	dir, goFile, soFile := dirFileNames(name)
+	dir, goFile, soFile, ok := tryGetDir(rw, name)
+	if !ok {
+		return
+	}
 	if !tryMakeDirAll(rw, dir) {
 		return
 	}
@@ -52,14 +55,18 @@ func tryGetName(rw http.ResponseWriter, r *http.Request) (name string, ok bool) 
 	return name, true
 }
 
-func dirFileNames(name string) (dir, goFile, soFile string) {
-	s := path.Join(
-		os.Getenv("GOPATH"),
-		"src/github.com/martindrlik/play/plugins", // TODO better path
-		name)
+func tryGetDir(rw http.ResponseWriter, name string) (dir, goFile, soFile string, ok bool) {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Printf("unable to get working directory: %v", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return "", "", "", false
+	}
+	s := path.Join(wd, name)
 	dir = path.Dir(s)
 	goFile = s + ".go"
 	soFile = s + ".so"
+	ok = true
 	return
 }
 
