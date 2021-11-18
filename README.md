@@ -8,6 +8,8 @@ Play is a http server that allows you to create api by uploading go file. Go fil
 
 Uploads go file and makes it ready for calling. After /upload there should be a path on which you can then call that "uploaded api".
 
+**Experimental**: Note that if the {specified/path} starts with `notify/`, for instance `/upload/notify/foo`, message (URL) will be produced to configured kafka topic.
+
 ## Example
 
 Start play web server. Create a go file called `hello.go` with following or similar content. Note that it is only expected to be main package with Main function.
