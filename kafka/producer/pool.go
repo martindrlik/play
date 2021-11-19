@@ -3,10 +3,10 @@ package producer
 import (
 	"context"
 	"errors"
-	"math"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/martindrlik/play/backoff"
 )
 
 type Pool struct {
@@ -49,7 +49,7 @@ func (o *Pool) TryAcquire(ctx context.Context) (*kafka.Producer, error) {
 		if err == ctx.Err() {
 			return nil, err
 		}
-		time.Sleep(time.Duration(math.Exp(float64(n))) * time.Second)
+		time.Sleep(backoff.Exp(n))
 	}
 	return nil, errors.New("all attempts to acquire producer failed")
 }
