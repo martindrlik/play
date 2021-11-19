@@ -8,12 +8,13 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/martindrlik/play/kafka/producer"
+	"github.com/martindrlik/play/options"
 )
 
-func Notify(broker, topic string, maxProducers int, acquireTimeout time.Duration) func(http.HandlerFunc) http.HandlerFunc {
-	pool := producer.NewPool(broker, maxProducers)
+func Notify(producerOpt options.KafkaOptions) func(http.HandlerFunc) http.HandlerFunc {
+	pool := producer.NewPool(producerOpt.Broker, producerOpt.PoolLimit)
 	tryNotify := func(rw http.ResponseWriter, r *http.Request) bool {
-		ctx, cancel := context.WithTimeout(r.Context(), acquireTimeout)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Second)
 		defer cancel()
 		p, err := pool.Acquire(ctx)
 		if err == r.Context().Err() {
@@ -32,7 +33,7 @@ func Notify(broker, topic string, maxProducers int, acquireTimeout time.Duration
 
 		err = p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{
-				Topic:     &topic,
+				Topic:     &producerOpt.Topic,
 				Partition: kafka.PartitionAny},
 			Value: []byte(r.URL.String())},
 			delivery)

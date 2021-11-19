@@ -10,12 +10,13 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/martindrlik/play/backoff"
 	"github.com/martindrlik/play/kafka/consumer"
+	"github.com/martindrlik/play/options"
 )
 
-func Subscribe(ctx context.Context, broker, topic string) func(http.HandlerFunc) http.HandlerFunc {
-	pool := consumer.NewPool(broker, 5)
+func Subscribe(ctx context.Context, consumerOpt options.KafkaOptions) func(http.HandlerFunc) http.HandlerFunc {
+	pool := consumer.NewPool(consumerOpt.Broker, consumerOpt.PoolLimit)
 	return func(hf http.HandlerFunc) http.HandlerFunc {
-		go pull(ctx, pool, topic, hf)
+		go pull(ctx, pool, consumerOpt.Topic, hf)
 		return func(rw http.ResponseWriter, r *http.Request) {
 			hf(rw, r)
 		}
