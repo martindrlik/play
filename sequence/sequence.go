@@ -2,28 +2,30 @@ package sequence
 
 import (
 	"context"
+	"log"
 	"net/http"
-	"sync"
+
+	"github.com/segmentio/ksuid"
 )
 
-func Sequence(start int64) func(http.HandlerFunc) http.HandlerFunc {
-	n := start
-	m := sync.Mutex{}
+func Sequence() func(http.HandlerFunc) http.HandlerFunc {
 	return func(hf http.HandlerFunc) http.HandlerFunc {
 		return func(rw http.ResponseWriter, r *http.Request) {
-			m.Lock()
-			n++
-			seq := n
-			m.Unlock()
-			ctx := context.WithValue(r.Context(), "sequence_int64", seq)
-			hf(rw, r.WithContext(ctx))
+			id, err := ksuid.NewRandom()
+			if err == nil {
+				ctx := context.WithValue(r.Context(), "sequence_id", id.String())
+				hf(rw, r.WithContext(ctx))
+			} else {
+				log.Printf("unable to generate id: %v", err)
+				hf(rw, r)
+			}
 		}
 	}
 }
 
-func Get(ctx context.Context) int64 {
-	if seq, ok := ctx.Value("sequence_int64").(int64); ok {
-		return seq
+func Get(ctx context.Context) string {
+	if id, ok := ctx.Value("sequence_id").(string); ok {
+		return id
 	}
-	return 0
+	return ""
 }
