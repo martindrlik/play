@@ -2,10 +2,10 @@ package options
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 )
 
+// Load loads options from file given by name.
 func Load(name string) (opt Options, err error) {
 	f, err := os.Open(name)
 	if err != nil {
@@ -14,11 +14,4 @@ func Load(name string) (opt Options, err error) {
 	dec := json.NewDecoder(f)
 	err = dec.Decode(&opt)
 	return
-}
-
-func Must(opt Options, err error) Options {
-	if err != nil {
-		log.Fatal(err)
-	}
-	return opt
 }

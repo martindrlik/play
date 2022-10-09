@@ -9,6 +9,7 @@ import (
 	"github.com/martindrlik/play/sequence"
 )
 
+// Measure logs request duration and adds observations to histogram metrics.
 func Measure(hf http.HandlerFunc) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		start := time.Now()

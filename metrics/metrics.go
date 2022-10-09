@@ -15,4 +15,6 @@ var (
 	})
 )
 
+// RequestDurationObserve adds observation to the play_http_request_duration_seconds
+// histogram metric.
 func RequestDurationObserve(f float64) { requestDuration.Observe(f) }

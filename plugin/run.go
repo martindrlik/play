@@ -4,6 +4,7 @@ import (
 	"net/http"
 )
 
+// Run looks up handler by r.URL.Path and calls the handler.
 func Run(rw http.ResponseWriter, r *http.Request) {
 	name := r.URL.Path
 	main, ok := func() (main func(http.ResponseWriter, *http.Request), ok bool) {

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/martindrlik/play/her"
 	"github.com/martindrlik/play/kafka"
 	"github.com/martindrlik/play/limit"
 	"github.com/martindrlik/play/measure"
@@ -16,17 +17,17 @@ import (
 )
 
 var (
-	addr            = flag.String("addr", ":8085", "")
-	concurrentLimit = flag.Int("concurrent-limit", 10, "limit of how many requests can be processed in one time")
-	optFile         = flag.String("options", "options.json", "")
-	pluginDir       = flag.String("plugin-directory", "", "")
+	addr        = flag.String("addr", ":8085", "")
+	clientLimit = flag.Int("client-limit", 10, "limits of how many requests can be processed at once")
+	optFile     = flag.String("options", "options.json", "")
+	pluginDir   = flag.String("plugin-directory", "", "")
 
 	opt options.Options
 )
 
 func main() {
 	flag.Parse()
-	opt = options.Must(options.Load(*optFile))
+	opt = her.Must(options.Load(*optFile))
 
 	http.Handle("/metrics", metrics.Handler)
 
@@ -40,7 +41,7 @@ func main() {
 }
 
 func mc(hf http.HandlerFunc) http.HandlerFunc {
-	return sequence.Sequence()(measure.Measure(limit.Concurrent(*concurrentLimit)(hf)))
+	return sequence.Sequence()(measure.Measure(limit.Concurrent(*clientLimit)(hf)))
 }
 
 func mnc(hf http.HandlerFunc) http.HandlerFunc {
