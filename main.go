@@ -19,6 +19,7 @@ var (
 	addr            = flag.String("addr", ":8085", "")
 	concurrentLimit = flag.Int("concurrent-limit", 10, "limit of how many requests can be processed in one time")
 	optFile         = flag.String("options", "options.json", "")
+	pluginDir       = flag.String("plugin-directory", "", "")
 
 	opt options.Options
 )
@@ -29,6 +30,7 @@ func main() {
 
 	http.Handle("/metrics", metrics.Handler)
 
+	plugin.Directory = *pluginDir
 	http.HandleFunc("/upload/", mc(plugin.Upload))
 	http.HandleFunc("/notify/", mnc(plugin.Run))
 	http.HandleFunc("/subscribe/", msc(plugin.Run))

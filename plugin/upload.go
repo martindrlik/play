@@ -56,13 +56,16 @@ func tryGetName(rw http.ResponseWriter, r *http.Request) (name string, ok bool) 
 }
 
 func tryGetDir(rw http.ResponseWriter, name string) (dir, goFile, soFile string, ok bool) {
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Printf("unable to get working directory: %v", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return "", "", "", false
+	if Directory == "" {
+		var err error
+		Directory, err = os.Getwd()
+		if err != nil {
+			log.Printf("unable to get working directory: %v", err)
+			rw.WriteHeader(http.StatusInternalServerError)
+			return "", "", "", false
+		}
 	}
-	s := path.Join(wd, name)
+	s := path.Join(Directory, name)
 	dir = path.Dir(s)
 	goFile = s + ".go"
 	soFile = s + ".so"
