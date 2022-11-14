@@ -7,6 +7,6 @@ type KafkaOptions struct {
 }
 
 type Options struct {
-	Consumer KafkaOptions
-	Producer KafkaOptions
+	Consumer KafkaOptions // Consumer provides configuration for kafka consumer.
+	Producer KafkaOptions // Producer provides configuration for kafka producer.
 }

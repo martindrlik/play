@@ -1,6 +1,8 @@
 # play
 
-Play is a http server that allows you to create api by uploading go file. Go file is then built as a plugin and it is ready to be called on specified path.
+Play is a http server that enables creating API by uploading go file.
+Go file is then built as a plugin ready to handle requests on
+specified endpoint. And most importantly it's my playground :-)
 
 ## api
 

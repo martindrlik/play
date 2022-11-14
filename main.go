@@ -1,3 +1,6 @@
+// Play is a http server that enables creating API by uploading go file.
+// Go file is then built as a plugin ready to handle requests on
+// specified endpoint.
 package main
 
 import (
@@ -17,10 +20,10 @@ import (
 )
 
 var (
-	addr        = flag.String("addr", ":8085", "")
-	clientLimit = flag.Int("client-limit", 10, "limits of how many requests can be processed at once")
-	optFile     = flag.String("options", "options.json", "")
-	pluginDir   = flag.String("plugin-directory", "", "")
+	addr                = flag.String("addr", ":8085", "listens on the TCP network address addr")
+	maxInFlightRequests = flag.Int("max-in-flight-requests", 250, "limits number of in-flight requests")
+	optFile             = flag.String("options", "options.json", "")
+	pluginDir           = flag.String("plugin-directory", "", "")
 
 	opt options.Options
 )
@@ -32,22 +35,23 @@ func main() {
 	http.Handle("/metrics", metrics.Handler)
 
 	plugin.Directory = *pluginDir
-	http.HandleFunc("/upload/", mc(plugin.Upload))
-	http.HandleFunc("/notify/", mnc(plugin.Run))
-	http.HandleFunc("/subscribe/", msc(plugin.Run))
-	http.HandleFunc("/", mc(plugin.Run))
+	http.HandleFunc("/upload/", cm(plugin.Upload))
+	http.HandleFunc("/notify/", cmp(plugin.Run))
+	http.HandleFunc("/subscribe/", cmc(plugin.Run))
+	http.HandleFunc("/", cm(plugin.Run))
 
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
-func mc(hf http.HandlerFunc) http.HandlerFunc {
-	return sequence.Sequence()(measure.Measure(limit.Concurrent(*clientLimit)(hf)))
+// cm applies capacity limit and measures duration of hf handler.
+func cm(hf http.HandlerFunc) http.HandlerFunc {
+	return sequence.Sequence()(limit.Capacity(*maxInFlightRequests)(measure.Measure(hf)))
 }
 
-func mnc(hf http.HandlerFunc) http.HandlerFunc {
-	return mc(kafka.Notify(opt.Producer)(hf))
+func cmp(hf http.HandlerFunc) http.HandlerFunc {
+	return cm(kafka.Notify(opt.Producer)(hf))
 }
 
-func msc(hf http.HandlerFunc) http.HandlerFunc {
-	return mc(kafka.Subscribe(context.TODO(), opt.Consumer)(hf))
+func cmc(hf http.HandlerFunc) http.HandlerFunc {
+	return cm(kafka.Subscribe(context.TODO(), opt.Consumer)(hf))
 }
