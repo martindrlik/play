@@ -5,33 +5,41 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/martindrlik/play/backoff"
-	"github.com/martindrlik/play/kafka/consumer"
 	"github.com/martindrlik/play/options"
 )
 
 func Subscribe(ctx context.Context, consumerOpt options.KafkaOptions) func(http.HandlerFunc) http.HandlerFunc {
-	pool := consumer.NewPool(consumerOpt.Broker, consumerOpt.PoolLimit)
+	consPool := sync.Pool{
+		New: func() any {
+			c, err := kafka.NewConsumer(&kafka.ConfigMap{"bootstrap.servers": consumerOpt.Broker})
+			if err != nil {
+				log.Printf("unable to create kafka consumer: %v", err)
+				return nil
+			}
+			return c
+		},
+	}
 	return func(hf http.HandlerFunc) http.HandlerFunc {
-		go pull(ctx, pool, consumerOpt.Topic, hf)
+		go pull(ctx, &consPool, consumerOpt.Topic, hf)
 		return func(rw http.ResponseWriter, r *http.Request) {
 			hf(rw, r)
 		}
 	}
 }
 
-func tryPull(ctx context.Context, pool *consumer.Pool, topic string, hf http.HandlerFunc) bool {
-	c, err := pool.Acquire(ctx)
-	if err != nil {
-		log.Printf("unable to acquire consumer: %v", err)
+func tryPull(ctx context.Context, pool *sync.Pool, topic string, hf http.HandlerFunc) bool {
+	c := pool.Get().(*kafka.Consumer)
+	if c == nil {
 		return false
 	}
 	// TODO in error case we probably need hijack "broken consumer"
-	defer pool.Release(c)
-	err = c.SubscribeTopics([]string{topic}, nil)
+	defer pool.Put(c)
+	err := c.SubscribeTopics([]string{topic}, nil)
 	if err != nil {
 		log.Printf("unable to subscribe topic: %v", err)
 		return false
@@ -78,7 +86,7 @@ proc:
 	return true
 }
 
-func pull(ctx context.Context, pool *consumer.Pool, topic string, hf http.HandlerFunc) {
+func pull(ctx context.Context, pool *sync.Pool, topic string, hf http.HandlerFunc) {
 	retry := 0
 	for {
 		if !tryPull(ctx, pool, topic, hf) {

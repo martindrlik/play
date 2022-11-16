@@ -1,48 +1,54 @@
 package kafka
 
 import (
-	"context"
 	"log"
 	"net/http"
-	"time"
+	"sync"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/martindrlik/play/kafka/producer"
 	"github.com/martindrlik/play/options"
 )
 
+// Notify
 func Notify(producerOpt options.KafkaOptions) func(http.HandlerFunc) http.HandlerFunc {
-	pool := producer.NewPool(producerOpt.Broker, producerOpt.PoolLimit)
+	prodPool := sync.Pool{
+		New: func() any {
+			p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": producerOpt.Broker})
+			if err != nil {
+				log.Printf("unable to create kafka producer: %v", err)
+				return nil
+			}
+			return p
+		},
+	}
 	tryNotify := func(rw http.ResponseWriter, r *http.Request) bool {
-		ctx, cancel := context.WithTimeout(r.Context(), time.Second)
-		defer cancel()
-		p, err := pool.Acquire(ctx)
-		if err == r.Context().Err() {
-			http.Error(rw, err.Error(), http.StatusBadRequest)
-			return false
-		}
-		if err != nil {
-			log.Printf("unable to acquire kafka producer: %v", err)
+		p := prodPool.Get().(*kafka.Producer)
+		if p == nil {
 			rw.WriteHeader(http.StatusInternalServerError)
 			return false
 		}
-		defer pool.Release(p)
+		defer prodPool.Put(p)
 
 		delivery := make(chan kafka.Event)
 		defer close(delivery)
 
-		err = p.Produce(&kafka.Message{
+		err := p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{
 				Topic:     &producerOpt.Topic,
 				Partition: kafka.PartitionAny},
 			Value: []byte(r.URL.String())},
 			delivery)
+		if err != nil {
+			log.Printf("unable to produce message: %v", err)
+			rw.WriteHeader(http.StatusInternalServerError)
+			return false
+		}
 
 		e := <-delivery
 		m := e.(*kafka.Message) // TODO check type assert: m, ok := e.(*kafka.Message)...
 
 		if m.TopicPartition.Error != nil {
-			log.Printf("unable to produce: %v", m.TopicPartition.Error)
+			log.Printf("topic partition error: %v", m.TopicPartition.Error)
 			rw.WriteHeader(http.StatusInternalServerError)
 			return false
 		}
