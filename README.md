@@ -1,22 +1,20 @@
 # play
 
 Play is a http server that enables creating API by uploading go file.
-Go file is then built as a plugin ready to handle requests on
-specified endpoint. And most importantly it's my playground :-)
 
 ## api
 
 ### /upload/{specified/path}
 
-Uploads go file and makes it ready for calling. After /upload there should be a path on which you can then call that "uploaded api".
+Uploads Go file and makes it ready for use on path /specified/path.
 
-If the {specified/path} starts with `notify/`, for instance `/upload/notify/foo`, message (URL) will be produced to configured kafka topic.
+If the {specified/path} starts with `notify/` calling this API will also produced path to configured kafka topic.
 
-If the {specified/path} starts with `subscribe/`, for instance `/upload/subscribe/foo`, `foo` will be subscribed to consume `-kafka-consumer-topic`, in other words `foo` will be called for any new messages that are pulled from that topic. It still can be called as other "uploaded api".
+If the {specified/path} starts with `subscribe/` API will be called by any message pulled from configured kafka topic (`-kafka-consumer-topic`).
 
 ## Example
 
-Start play web server. Create a go file called `hello.go` with following or similar content. Note that it is only expected to be main package with Main function.
+Create a go file called `hello.go` with following content.
 
 ```go
 package main
@@ -32,15 +30,15 @@ func Main(rw http.ResponseWriter, r *http.Request) {
 }
 ```
 
-Upload that file. We can use `curl` for instance.
+Star play server. Upload `hello.go` file.
 
 ```zsh
 % curl --data-binary @hello.go http://localhost:8085/upload/say/hello
 ```
 
-Note that `/upload/{specified/path}` is `/upload/say/hello`. `/say/hello` is going to be path for calling that "uploaded api".
+Note that `/upload/{specified/path}` is `/upload/say/hello`. `/say/hello` is going to be used as a path for calling that "uploaded api".
 
 ```zsh
-% curl "http://localhost:8085/say/hello?name=Gopher"
+% curl http://localhost:8085/say/hello\?name=Gopher
 Hello, Gopher!
 ```
