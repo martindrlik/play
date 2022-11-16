@@ -8,6 +8,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/martindrlik/play/her"
 	"github.com/martindrlik/play/kafka"
@@ -23,7 +24,7 @@ var (
 	addr                = flag.String("addr", ":8085", "listens on the TCP network address addr")
 	maxInFlightRequests = flag.Int("max-in-flight-requests", 250, "limits number of in-flight requests")
 	optFile             = flag.String("options", "options.json", "")
-	pluginDir           = flag.String("plugin-directory", "", "")
+	workingDirectory    = flag.String("working-directory", "./wd", "")
 
 	opt options.Options
 )
@@ -32,9 +33,11 @@ func main() {
 	flag.Parse()
 	opt = her.Must(options.Load(*optFile))
 
-	http.Handle("/metrics", metrics.Handler)
+	if err := os.Chdir(*workingDirectory); err != nil {
+		panic(err)
+	}
 
-	plugin.Directory = *pluginDir
+	http.Handle("/metrics", metrics.Handler)
 	http.HandleFunc("/upload/", cm(plugin.Upload))
 	if opt.Producer.Broker != "" {
 		http.HandleFunc("/notify/", cmp(plugin.Run))
