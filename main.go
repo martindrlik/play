@@ -36,8 +36,12 @@ func main() {
 
 	plugin.Directory = *pluginDir
 	http.HandleFunc("/upload/", cm(plugin.Upload))
-	http.HandleFunc("/notify/", cmp(plugin.Run))
-	http.HandleFunc("/subscribe/", cmc(plugin.Run))
+	if opt.Producer.Broker != "" {
+		http.HandleFunc("/notify/", cmp(plugin.Run))
+	}
+	if opt.Consumer.Broker != "" {
+		http.HandleFunc("/subscribe/", cmc(plugin.Run))
+	}
 	http.HandleFunc("/", cm(plugin.Run))
 
 	log.Fatal(http.ListenAndServe(*addr, nil))

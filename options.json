@@ -1,12 +1,2 @@
 {
-    "consumer": {
-        "broker": "localhost:9092",
-        "topic": "example",
-        "poolLimit": 10
-    },
-    "producer": {
-        "broker": "localhost:9092",
-        "topic": "example",
-        "poolLimit": 10
-    }
 }
