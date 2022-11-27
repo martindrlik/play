@@ -1,16 +1,12 @@
 # play
 
-Play is a http server that enables creating API by uploading go file.
+Play is a http server that enables creating API by uploading a Go file.
 
 ## api
 
 ### /upload/{specified/path}
 
 Uploads Go file and makes it ready for use on path /specified/path.
-
-If the {specified/path} starts with `notify/` calling this API will also produced path to configured kafka topic.
-
-If the {specified/path} starts with `subscribe/` API will be called by any message pulled from configured kafka topic (`-kafka-consumer-topic`).
 
 ## Example
 

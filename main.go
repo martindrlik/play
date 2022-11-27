@@ -21,44 +21,50 @@ import (
 )
 
 var (
-	addr                = flag.String("addr", ":8085", "listens on the TCP network address addr")
-	maxInFlightRequests = flag.Int("max-in-flight-requests", 250, "limits number of in-flight requests")
-	optFile             = flag.String("options", "options.json", "")
-	workingDirectory    = flag.String("working-directory", "./wd", "")
-
-	opt options.Options
+	addr  = flag.String("addr", ":8085", "listens on the TCP network address addr")
+	rcap  = flag.Int("capacity", 250, "limits number of in-flight requests")
+	ofile = flag.String("options", "options.json", "")
+	wdir  = flag.String("working-directory", "./wd", "")
 )
 
 func main() {
-	flag.Parse()
-	opt = her.Must(options.Load(*optFile))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	if err := os.Chdir(*workingDirectory); err != nil {
+	flag.Parse()
+	o := her.Must(options.Load(*ofile))
+
+	if err := os.Chdir(*wdir); err != nil {
 		panic(err)
 	}
 
-	http.Handle("/metrics", metrics.Handler)
-	http.HandleFunc("/upload/", cm(plugin.Upload))
-	if opt.Producer.Broker != "" {
-		http.HandleFunc("/notify/", cmp(plugin.Run))
-	}
-	if opt.Consumer.Broker != "" {
-		http.HandleFunc("/subscribe/", cmc(plugin.Run))
-	}
-	http.HandleFunc("/", cm(plugin.Run))
+	p := her.Must(kafka.NewProducer(ctx, o.KafkaBroker))
+	m := make(chan kafka.Message)
+	go func() {
+		for {
+			select {
+			case <-m:
+				panic("not implemented")
+			case <-ctx.Done():
+				panic("canceled")
+			}
+		}
+	}()
+	go func() {
+		err := kafka.Consume(
+			ctx,
+			o.KafkaUploadTopic,
+			o.KafkaBroker,
+			m)
+		panic(err)
+	}()
 
+	http.Handle("/metrics", metrics.Handler)
+	http.HandleFunc("/upload/", cm(plugin.Upload(o.KafkaUploadTopic, p)))
+	http.HandleFunc("/", cm(plugin.Run))
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
-// cm applies capacity limit and measures duration of hf handler.
 func cm(hf http.HandlerFunc) http.HandlerFunc {
-	return sequence.Sequence()(limit.Capacity(*maxInFlightRequests)(measure.Measure(hf)))
-}
-
-func cmp(hf http.HandlerFunc) http.HandlerFunc {
-	return cm(kafka.Notify(opt.Producer)(hf))
-}
-
-func cmc(hf http.HandlerFunc) http.HandlerFunc {
-	return cm(kafka.Subscribe(context.TODO(), opt.Consumer)(hf))
+	return sequence.Sequence()(limit.Capacity(*rcap)(measure.Measure(hf)))
 }

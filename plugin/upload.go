@@ -1,19 +1,48 @@
 package plugin
 
 import (
+	"bytes"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/martindrlik/play/kafka"
 )
 
 var (
 	MaxUploadFileLength = 16e3
 )
 
+// Upload creates handler that produces uploaded content to kafka topic by using producer p.
+func Upload(topic string, p *kafka.Producer) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		if r.ContentLength > int64(MaxUploadFileLength) {
+			http.Error(rw, "max upload file length exceeded", http.StatusBadRequest)
+			return
+		}
+		name, ok := tryGetName(rw, r)
+		if !ok {
+			return
+		}
+		value := &bytes.Buffer{}
+		_, err := io.CopyN(value, r.Body, int64(MaxUploadFileLength))
+		if err != nil {
+			http.Error(rw, "unable to read request body", http.StatusInternalServerError)
+			return
+		}
+		err = p.Produce(topic, value.Bytes(), []byte(name))
+		if err != nil {
+			http.Error(rw, "unable to store request body", http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 // Upload allows uploading go file, builds it as a plugin and returns url path that runs it.
-func Upload(rw http.ResponseWriter, r *http.Request) {
+func x(rw http.ResponseWriter, r *http.Request) {
 	if r.ContentLength > int64(MaxUploadFileLength) {
 		http.Error(rw, "max upload file length exceeded", http.StatusBadRequest)
 		return
