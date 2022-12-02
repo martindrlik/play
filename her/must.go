@@ -1,10 +1,16 @@
 package her
 
-// Must is a helper that wraps a call to a function returning (T, error)
-// and panics if the error is non-nil.
+// Must panics if err is not nil and returns t otherwise.
 func Must[T any](t T, err error) T {
 	if err != nil {
 		panic(err)
 	}
 	return t
+}
+
+// Must1 panics if err is not nil.
+func Must1(err error) {
+	if err != nil {
+		panic(err)
+	}
 }

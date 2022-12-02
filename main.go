@@ -1,6 +1,6 @@
-// Play is a http server that enables creating API by uploading go file.
-// Go file is then built as a plugin ready to handle requests on
-// specified endpoint.
+// Play is a http server that enables creating API by uploading
+// handler's source code. Compiled as a plugin ready to handle
+// requests on specified endpoint.
 package main
 
 import (
@@ -21,24 +21,31 @@ import (
 )
 
 var (
-	addr  = flag.String("addr", ":8085", "listens on the TCP network address addr")
-	rcap  = flag.Int("capacity", 250, "limits number of in-flight requests")
-	ofile = flag.String("options", "options.json", "")
-	wdir  = flag.String("working-directory", "./wd", "")
+	addr = flag.String("addr", ":8085", "listens on the TCP network address addr")
+	rcap = flag.Int("limit", 250, "limits number of in-flight requests to limit")
+	opts = flag.String("options", "options.json", "")
+	wdir = flag.String("wd", "", "working directory")
 )
 
 func main() {
+	flag.Parse()
+	if *wdir != "" {
+		her.Must1(os.Chdir(*wdir))
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	flag.Parse()
-	o := her.Must(options.Load(*ofile))
+	o := her.Must(options.Load(*opts))
+	go consume(ctx, o)
 
-	if err := os.Chdir(*wdir); err != nil {
-		panic(err)
-	}
+	http.Handle("/metrics", metrics.Handler)
+	http.HandleFunc("/upload/", cm(plugin.Upload(ctx, o)))
+	http.HandleFunc("/", cm(plugin.Run))
+	log.Fatal(http.ListenAndServe(*addr, nil))
+}
 
-	p := her.Must(kafka.NewProducer(ctx, o.KafkaBroker))
+func consume(ctx context.Context, o options.Options) {
 	m := make(chan kafka.Message)
 	go func() {
 		for {
@@ -50,19 +57,11 @@ func main() {
 			}
 		}
 	}()
-	go func() {
-		err := kafka.Consume(
-			ctx,
-			o.KafkaUploadTopic,
-			o.KafkaBroker,
-			m)
-		panic(err)
-	}()
-
-	http.Handle("/metrics", metrics.Handler)
-	http.HandleFunc("/upload/", cm(plugin.Upload(o.KafkaUploadTopic, p)))
-	http.HandleFunc("/", cm(plugin.Run))
-	log.Fatal(http.ListenAndServe(*addr, nil))
+	her.Must1(kafka.Consume(
+		ctx,
+		o.KafkaUploadTopic,
+		o.KafkaBroker,
+		m))
 }
 
 func cm(hf http.HandlerFunc) http.HandlerFunc {
