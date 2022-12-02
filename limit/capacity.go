@@ -2,7 +2,8 @@ package limit
 
 import "net/http"
 
-// Capacity limits maximum number of in-flight request.
+// Capacity wraps http handler in order to limit maximum
+// number of in-flight request to max.
 func Capacity(max int) func(http.HandlerFunc) http.HandlerFunc {
 	ch := make(chan struct{}, max)
 	return func(hf http.HandlerFunc) http.HandlerFunc {
