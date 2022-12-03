@@ -17,6 +17,12 @@ func TestCapacity(t *testing.T) {
 		{"one request allowed", 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			// note that all in-flight request are waiting for done
+			// one request is expected to get 429 too many requests
+			// this request does not enter so it is not blocked
+			// this request closes done channel => unblocks
+			// in-flight requests, check their status,
+			// test ends
 			done := make(chan struct{})
 			statuses := make(chan int)
 			h := limit.Capacity(tc.max)(func(w http.ResponseWriter, r *http.Request) {
