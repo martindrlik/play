@@ -2,25 +2,19 @@ package plugin
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path"
-
-	"github.com/martindrlik/play/her"
-	"github.com/martindrlik/play/kafka"
-	"github.com/martindrlik/play/options"
 )
 
 var (
 	MaxUploadFileLength = 16e3
 )
 
-// Upload creates handler that produces uploaded content to kafka topic given by options o.
-func Upload(ctx context.Context, o options.Options) http.HandlerFunc {
-	p := her.Must(kafka.NewProducer(ctx, o.KafkaBroker))
+// Upload creates handler that produces uploaded content by using produce func.
+func Upload(produce func(value, key []byte) error) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		if r.ContentLength > int64(MaxUploadFileLength) {
@@ -37,7 +31,7 @@ func Upload(ctx context.Context, o options.Options) http.HandlerFunc {
 			http.Error(rw, "unable to read request body", http.StatusInternalServerError)
 			return
 		}
-		err = p.Produce(o.KafkaUploadTopic, value.Bytes(), []byte(name))
+		err = produce(value.Bytes(), []byte(name))
 		if err != nil {
 			http.Error(rw, "unable to store request body", http.StatusInternalServerError)
 			return

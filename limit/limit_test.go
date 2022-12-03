@@ -11,16 +11,16 @@ import (
 func TestCapacity(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		max  int
+		max  uint
 	}{
 		{"zero request allowed", 0},
 		{"one request allowed", 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			// note that all in-flight request are waiting for done
+			// note that all in-flight requests are waiting for done
 			// one request is expected to get 429 too many requests
 			// this request does not enter so it is not blocked
-			// this request closes done channel => unblocks
+			// this request closes done channel, unblocks
 			// in-flight requests, check their status,
 			// test ends
 			done := make(chan struct{})
@@ -29,7 +29,7 @@ func TestCapacity(t *testing.T) {
 				<-done
 			})
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
-			for i := 0; i < tc.max+1; i++ {
+			for i := uint(0); i < tc.max+1; i++ {
 				go func() {
 					rec := httptest.NewRecorder()
 					h(rec, req)
@@ -40,7 +40,7 @@ func TestCapacity(t *testing.T) {
 					}
 				}()
 			}
-			for i := 0; i < tc.max; i++ {
+			for i := uint(0); i < tc.max; i++ {
 				if actual := <-statuses; actual != http.StatusOK {
 					t.Errorf("expected 200 got %v", actual)
 				}

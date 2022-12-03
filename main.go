@@ -6,64 +6,45 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 	"net/http"
 	"os"
 
+	"github.com/martindrlik/play/config"
 	"github.com/martindrlik/play/her"
-	"github.com/martindrlik/play/kafka"
+	"github.com/martindrlik/play/id"
 	"github.com/martindrlik/play/limit"
 	"github.com/martindrlik/play/measure"
 	"github.com/martindrlik/play/metrics"
-	"github.com/martindrlik/play/options"
 	"github.com/martindrlik/play/plugin"
-	"github.com/martindrlik/play/sequence"
 )
 
 var (
 	addr = flag.String("addr", ":8085", "listens on the TCP network address addr")
-	rcap = flag.Int("limit", 250, "limits number of in-flight requests to limit")
-	opts = flag.String("options", "options.json", "")
-	wdir = flag.String("wd", "", "working directory")
+	conf = flag.String("config", "config.json", "")
 )
 
 func main() {
 	flag.Parse()
-	if *wdir != "" {
-		her.Must1(os.Chdir(*wdir))
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	o := her.Must(options.Load(*opts))
-	go consume(ctx, o)
+	cfg := her.Must(os.Open(*conf))
+	defer cfg.Close()
 
-	http.Handle("/metrics", metrics.Handler)
-	http.HandleFunc("/upload/", cm(plugin.Upload(ctx, o)))
-	http.HandleFunc("/", cm(plugin.Run))
-	log.Fatal(http.ListenAndServe(*addr, nil))
+	config := her.Must(config.Load(cfg))
+	go consumeMessages(ctx, config)
+	produce := producer(ctx, config)
+	her.Must1(http.ListenAndServe(*addr, handler(config, produce)))
 }
 
-func consume(ctx context.Context, o options.Options) {
-	m := make(chan kafka.Message)
-	go func() {
-		for {
-			select {
-			case <-m:
-				panic("not implemented")
-			case <-ctx.Done():
-				panic("canceled")
-			}
-		}
-	}()
-	her.Must1(kafka.Consume(
-		ctx,
-		o.KafkaUploadTopic,
-		o.KafkaBroker,
-		m))
+func handler(config config.Config, produce func(value, key []byte) error) http.Handler {
+	h := http.NewServeMux()
+	h.Handle("/metrics", metrics.Handler)
+	h.HandleFunc("/", cm(config, plugin.Run))
+	h.HandleFunc("/upload/", cm(config, plugin.Upload(produce)))
+	return h
 }
 
-func cm(hf http.HandlerFunc) http.HandlerFunc {
-	return sequence.Sequence()(limit.Capacity(*rcap)(measure.Measure(hf)))
+func cm(config config.Config, hf http.HandlerFunc) http.HandlerFunc {
+	return id.Gen()(limit.Capacity(config.RequestLimit)(measure.Measure(hf)))
 }
