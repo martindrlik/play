@@ -17,7 +17,11 @@ func Consume(
 	ctx context.Context,
 	topic, broker string,
 	ch chan<- Message) error {
-	kc, err := kafka.NewConsumer(&kafka.ConfigMap{"bootstrap.servers": broker})
+	kc, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers":  broker,
+		"group.id":           "not used",
+		"enable.auto.commit": "false",
+		"auto.offset.reset":  kafka.OffsetBeginning.String()})
 	if err != nil {
 		return fmt.Errorf("unable to create kafka consumer: %w", err)
 	}

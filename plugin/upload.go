@@ -32,7 +32,7 @@ func Upload(produce func(value, key []byte) error) http.HandlerFunc {
 		}
 		value := &bytes.Buffer{}
 		_, err := io.CopyN(value, r.Body, int64(MaxUploadFileLength))
-		if err != nil {
+		if err != nil && err != io.EOF {
 			metrics.UploadReadingBodyError()
 			log.Printf("upload reading body: %v", err)
 			http.Error(rw, "unable to read request body", http.StatusInternalServerError)

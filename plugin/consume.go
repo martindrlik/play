@@ -38,7 +38,7 @@ func consume(content []byte, path string) (func(http.ResponseWriter, *http.Reque
 	if err := writeGoFile(content, goFile); err != nil {
 		return nil, fmt.Errorf("unable to write %q: %w", goFile, err)
 	}
-	if err := build(goFile); err != nil {
+	if err := build(goFile, soFile); err != nil {
 		return nil, fmt.Errorf("unable to build %q: %w", goFile, err)
 	}
 	main, err := tryLookupHandler(soFile)
