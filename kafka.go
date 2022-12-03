@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/martindrlik/play/config"
 	"github.com/martindrlik/play/her"
 	"github.com/martindrlik/play/kafka"
+	"github.com/martindrlik/play/plugin"
 )
 
 func producer(ctx context.Context, config config.Config) func(value, key []byte) error {
@@ -20,10 +22,10 @@ func consumeMessages(ctx context.Context, config config.Config) {
 	go func() {
 		for {
 			select {
-			case <-m:
-				panic("not implemented")
+			case m := <-m:
+				plugin.Consume(m.Value, string(m.Key))
 			case <-ctx.Done():
-				panic("canceled")
+				panic(fmt.Errorf("canceled: %w", ctx.Err()))
 			}
 		}
 	}()
