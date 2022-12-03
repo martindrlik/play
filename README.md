@@ -1,95 +1,121 @@
 # play
 
-Play is a http server that enables creating API by uploading
-handler's source code (Go). Compiled as a plugin ready to
-handle requests on specified endpoint.
+Play is a HTTP server that allows you to create API
+endpoints by uploading a GO file. It is built
+as a plugin which is then ready to handle requests
+on the specified path.
 
-Note that play is my playground for experiments. Without
-modifications it should not be taken to production as
-there might be security or other issues. Most notably
+Note that "play" is my playground for experiments. Without
+modifications it should not be taken to production
+(as there might be security or other issues). Most notably
 it compiles and runs uploaded code permitted to do
-the same things as play process itself.
+the same things as the play process itself.
 
-## api
+## API
 
 ### /upload/specified/path
 
-Uploads source code and makes it ready for use on path
-`/specified/path`. Note that your source code needs to
-have `Main(http.ResponseWriter, *http.Request)` func.
+Uploads the source code and makes it ready
+to be used on the following path: `/specified/path`.
+Note that your source code needs to have the
+`Main(http.ResponseWriter, *http.Request)` function.
 
 ### /analyze/specified/path
 
-If there is an error while deploying source code it should
-be investigated on path `/analyze/specified/path`.
+If there is an error while building the source code,
+it can be investigated on the following path:
+`/analyze/specified/path`.
 
 ### /specified/path
 
-After source code is successfully deployed it serves on
-`/specified/path`.
+After source code is successfully built, it handles requests
+on the following path: `/specified/path`.
 
-## How it works?
+## How does it work?
 
-Uploaded content is produced to kafka topic. Error
-while uploading is reported directly to client and
-also to play's logs (stdout) and metrics. Play
-is suscribed to consume that topic's messages.
-Once message is pulled it builds source code
-provided by message as a Go plugin and lookups
-Main func. Error during this process is available
-on path `/analyze/specified/path`. It should be
-always consulted.
+Uploaded content is produced to a kafka topic.
 
-If no error `/specified/path` can be requested.
+Play is suscribed to consume that topic's messages.
+Once a message is pulled, it builds the source code
+provided by a message as a GO plugin and looks up
+the Main function.
+
+Any errors that occur while uploading are reported directly
+to the client and also to play's logs (stdout) and metrics.
+
+The error message createdd during this process is available
+on the followingpath: `/analyze/specified/path`.
+Make sure to always consult it.
+
+If no error has occurred, you can a request to
+the following: `/specified/path`.
 
 Hurray! 🎉
 
 ### Replicas
 
 In order to improve availability and to handle
-more requests multiple play servers can be
-deployed. Client is then usually requesting
-load balancer which forwards client request
-to by some algorithm choosen replica. Round
-robin or more sophisticated algorithm can
-be used. All replicas are the same so it
+more requests, multiple play servers can be
+deployed.
+
+The client usually sends requests to
+a load balancer which forwards the request to
+a replica chosen by some algorithm choosen.
+E.g. Round robin or a more sophisticated
+algorithm can be used. All replicas are the same so it
 does not matter which one is picked for
 the job.
 
 #### Replicas can be added or removed
 
-If higher load (more clients) is expected or otherwise
-play servers can be added or removed as needed.
+If more clients are expected, more play servers
+can be added to handle more requests and vice
+versa - play servers can be removed as there
+are less requests to handle.
 
-If a new replica is added then it starts processing
-all kafka messages from specified topic, from
-the oldest one to the most recent one. It
-means that new replica will eventually
-catch up with others.
-
-Note that play has bug here! New replica will start
-serving even though it did not catch up with
-others yet.
+If a new replica is added, it starts pulling all
+messages from the kafka topic - starting with the first
+message and eventually will catch up with
+the others.
 
 ### Result consistency
 
-Note that play has eventually consistent model.
-Client only waits for message to be send (produced).
-Client does not wait for message to be processed,
-source code compiled and so on. This happens
+Note that play has an eventually consistent model.
+
+The client only waits for a message to be sent (produced).
+Client does not wait for a message to be processed,
+for the source code to be built and so on. This happens
 asynchronously. It means that result of requesting
 `/specified/path` or `/analyze/specified/path`
 right after uploading may not be available.
 
-With multiple replicas and also depends on deployed
-load balancing strategy the result might be
-inconsistent, but eventually become consistent
-as all replicas complete processing message
-and compilation.
+With multiple replicas and also depending on the deployed
+load balancing strategy, the result might be
+inconsistent - but eventually becomes consistent
+as all replicas complete processing the message
+and building.
 
-## Example
+## QUICKSTART
 
-Create a go file called `hello.go` with following content.
+- Get kafka.
+- Start the kafka environment.
+- Create a topic to store uploaded content.
+- Get play.
+- Create `config.json` with the following content
+  (to match your kafka broker and topic):
+
+```json
+{
+  "kafkaBroker": "localhost:9092",
+  "kafkaUploadTopic": "play-events"
+}
+```
+
+```zsh
+% play -addr=:8085 -config=config.json
+```
+
+- Create a GO file called `hello.go` with the following content:
 
 ```go
 package main
@@ -105,15 +131,26 @@ func Main(rw http.ResponseWriter, r *http.Request) {
 }
 ```
 
-Star kafka broker and play server. Upload `hello.go` file.
+- Use curl to upload `hello.go`:
 
 ```zsh
 % curl --data-binary @hello.go http://localhost:8085/upload/say/hello
 ```
 
-Note that `/upload/{specified/path}` is `/upload/say/hello`. `/say/hello` is going to be used as a path for calling that "uploaded api".
+Note that `/upload/specified/path` is `/upload/say/hello`. `/say/hello` is going to be used as a path for calling that uploaded API endpoint.
 
 ```zsh
 % curl http://localhost:8085/say/hello\?name=Gopher
 Hello, Gopher!
 ```
+
+## Package Documentations
+
+- <https://pkg.go.dev/github.com/martindrlik/play/config>
+- <https://pkg.go.dev/github.com/martindrlik/play/her>
+- <https://pkg.go.dev/github.com/martindrlik/play/id>
+- <https://pkg.go.dev/github.com/martindrlik/play/kafka>
+- <https://pkg.go.dev/github.com/martindrlik/play/limit>
+- <https://pkg.go.dev/github.com/martindrlik/play/measure>
+- <https://pkg.go.dev/github.com/martindrlik/play/metrics>
+- <https://pkg.go.dev/github.com/martindrlik/play/plugin>
