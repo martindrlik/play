@@ -1,7 +1,6 @@
 package id
 
 import (
-	"context"
 	"log"
 	"net/http"
 
@@ -29,10 +28,7 @@ func Gen() func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// Get returns id from context added by Gen.
-func Get(ctx context.Context) string {
-	if rid, ok := ctx.Value(RequestIdHeaderName).(string); ok {
-		return rid
-	}
-	return ""
+// Get returns id added by Gen.
+func Get(rw http.ResponseWriter) string {
+	return rw.Header().Get(RequestIdHeaderName)
 }
