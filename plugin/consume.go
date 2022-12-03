@@ -6,18 +6,25 @@ import (
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/martindrlik/play/metrics"
 )
 
 // Consume compiles handler's source code given by content and makes it accessible as an API given by path.
 func Consume(content []byte, path string) {
 	main, err := consume(content, path)
+	if err == nil {
+		metrics.PluginAdded()
+	} else {
+		metrics.PluginError()
+	}
 	storageMutex.Lock()
 	defer storageMutex.Unlock()
 	if err == nil {
 		// set new version only if there is no error
 		plugins[path] = main
 	}
-	analyze[path] = err
+	analyze[path] = err // if no error resets previous error
 }
 
 func consume(content []byte, path string) (func(http.ResponseWriter, *http.Request), error) {

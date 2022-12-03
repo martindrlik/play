@@ -29,6 +29,14 @@ var (
 		Name: "play_upload_storing_error_count",
 		Help: "Unable to store uploaded content. Client got status 500.",
 	})
+	pluginAdded = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "play_plugin_added_count",
+		Help: "Number of successfully added plugins.",
+	})
+	pluginError = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "play_plugin_error_count",
+		Help: "Plugin related (build, lookup, etc.) error count. Client should consult /analyze.",
+	})
 )
 
 // ObserveDuration adds observation to the play_http_request_duration_seconds
@@ -46,3 +54,9 @@ func UploadReadingBodyError() { uploadReadingBodyError.Inc() }
 
 // UploadStoringError increases the upload storing error count.
 func UploadStoringError() { uploadStoringError.Inc() }
+
+// PluginAdded increases the number of successfully added plugins.
+func PluginAdded() { pluginAdded.Inc() }
+
+// PluginError increases the plugin related error count.
+func PluginError() { pluginError.Inc() }
