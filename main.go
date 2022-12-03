@@ -46,5 +46,5 @@ func handler(config config.Config, produce func(value, key []byte) error) http.H
 }
 
 func cm(config config.Config, hf http.HandlerFunc) http.HandlerFunc {
-	return id.Gen()(limit.Capacity(config.RequestLimit)(measure.Measure(hf)))
+	return id.Gen()(limit.Capacity(config.RequestLimit)(measure.Measure(metrics.ObserveDuration, hf)))
 }
