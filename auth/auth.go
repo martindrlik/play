@@ -1,10 +1,13 @@
 package auth
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/martindrlik/play/config"
+	"github.com/martindrlik/play/id"
+	"github.com/martindrlik/play/metrics"
 )
 
 var RequestApiKeyName = "X-Request-ApiKeyName"
@@ -16,17 +19,22 @@ func Auth(config config.Config, hf http.HandlerFunc) http.HandlerFunc {
 		apiKeyNameByValue[apiKey.Value] = apiKey.Name
 	}
 	return func(rw http.ResponseWriter, r *http.Request) {
-		apiKey, ok := getRequestApiKey(r)
+		apiKeyValue, ok := getRequestApiKey(r)
+		apiKeyName := ""
 		if ok {
-			apiKey, ok = apiKeyNameByValue[apiKey]
+			apiKeyName, ok = apiKeyNameByValue[apiKeyValue]
 		}
 		if !ok {
-			// todo metrics
+			metrics.AuthError()
+			if apiKeyValue == "" {
+				log.Printf("(%v) missing Authorization header or no value", id.Get(rw))
+			} else {
+				log.Printf("(%v) invalid api key", id.Get(rw))
+			}
 			http.Error(rw, "", http.StatusUnauthorized)
 			return
 		}
-		// metrics
-		rw.Header().Add(RequestApiKeyName, apiKey)
+		rw.Header().Add(RequestApiKeyName, apiKeyName)
 		hf(rw, r)
 	}
 }
