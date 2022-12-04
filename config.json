@@ -2,6 +2,7 @@
 	"kafkaBroker": "localhost:9092",
 	"kafkaUploadTopic": "play-events",
 	"apiKeys": [
-		{ "name": "main-api-key", "value": "FdO8qePcl329prtN2QpexYdRa5fJhGbN" }
+		{ "name": "main-api-key", "value": "FdO8qePcl329prtN2QpexYdRa5fJhGbN" },
+		{ "name": "user-api-key", "value": "mBp8qeyGl7k1uuZN2tpwxYdRa5fJh1bx" }
 	]
 }

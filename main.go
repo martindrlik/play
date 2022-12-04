@@ -41,18 +41,22 @@ func main() {
 func handler(config config.Config, produce func(value, key []byte) error) http.Handler {
 	h := http.NewServeMux()
 	h.Handle("/metrics", metrics.Handler)
-	h.HandleFunc("/upload/", cm(config, plugin.Upload(produce)))
-	h.HandleFunc("/analyze/", cm(config, plugin.Analyze))
-	h.HandleFunc("/", cm(config, plugin.Execute))
+	// api key authenticated
+	h.HandleFunc("/upload/", id.Gen(acm(config, plugin.Upload(produce))))
+	h.HandleFunc("/analyze/", id.Gen(acm(config, plugin.Analyze)))
+	h.HandleFunc("/", id.Gen(acm(config, plugin.Execute)))
 	return h
 }
 
+// acm adds request authentication to hf otherwise the same as cm.
+func acm(config config.Config, hf http.HandlerFunc) http.HandlerFunc {
+	return auth.Auth(config, cm(config, hf))
+}
+
+// cm wraps hf to limit in-fligh requests and to measure handler's performance.
 func cm(config config.Config, hf http.HandlerFunc) http.HandlerFunc {
-	return id.Gen()( // add X-Request-Id
-		auth.Auth( // 401 or add X-Request-ApiKeyName
-			config,
-			limit.Capacity(config.RequestLimit)( // 429 if no room
-				measure.Measure( // logs duration
-					metrics.ObserveDuration,
-					hf))))
+	return limit.Capacity(config.RequestLimit)( // 429
+		measure.Measure( // logs duration
+			metrics.ObserveDuration,
+			hf))
 }

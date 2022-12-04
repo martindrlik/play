@@ -109,7 +109,8 @@ and building.
   "kafkaBroker": "localhost:9092",
   "kafkaUploadTopic": "play-events",
   "apiKeys": [
-    { "name": "main-api-key", "value": "ThatSecret" }
+    { "name": "main-api-key", "value": "ThatSecret1" },
+    { "name": "user-api-key", "value": "ThatSecret2" }
   ]
 }
 ```
@@ -137,13 +138,13 @@ func Main(rw http.ResponseWriter, r *http.Request) {
 - Use curl to upload `hello.go`:
 
 ```zsh
-% curl --data-binary @hello.go -H "Authorization: Bearer ThatSecret" http://localhost:8085/upload/say/hello
+% curl --data-binary @hello.go -H "Authorization: Bearer ThatSecret1" http://localhost:8085/upload/say/hello
 ```
 
 Note that `/upload/specified/path` is `/upload/say/hello`. `/say/hello` is going to be used as a path for calling that uploaded API endpoint.
 
 ```zsh
-% curl http://localhost:8085/say/hello\?name=Gopher
+% curl -H "Authorization: Bearer ThatSecret2" http://localhost:8085/say/hello\?name=Gopher
 Hello, Gopher!
 ```
 
