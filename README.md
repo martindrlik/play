@@ -146,6 +146,7 @@ Hello, Gopher!
 
 ## Package Documentations
 
+- <https://pkg.go.dev/github.com/martindrlik/play/auth>
 - <https://pkg.go.dev/github.com/martindrlik/play/config>
 - <https://pkg.go.dev/github.com/martindrlik/play/her>
 - <https://pkg.go.dev/github.com/martindrlik/play/id>
