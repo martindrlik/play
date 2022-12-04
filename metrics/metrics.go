@@ -9,6 +9,10 @@ import (
 var (
 	Handler = promhttp.Handler()
 
+	authError = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "play_auth_error_count",
+		Help: "Authentication error.",
+	})
 	requestDuration = promauto.NewHistogram(prometheus.HistogramOpts{
 		Name: "play_http_request_duration_seconds",
 		Help: "Request duration histogram.",
@@ -38,6 +42,9 @@ var (
 		Help: "Plugin related (build, lookup, etc.) error count. Client should consult /analyze.",
 	})
 )
+
+// AuthError increases authentication error count.
+func AuthError() { authError.Inc() }
 
 // ObserveDuration adds observation to the play_http_request_duration_seconds
 // histogram metric.
