@@ -56,5 +56,8 @@ func TestAuth(t *testing.T) {
 		if actual := rec.Header().Get(auth.RequestApiKeyName); actual != mainApiKey.Name {
 			t.Errorf("expected api key name header to be %q, got %q", mainApiKey.Name, actual)
 		}
+		if actual := auth.ApiKeyName(rec); actual != mainApiKey.Name {
+			t.Errorf("expected api key name returned by auth.ApiKeyName to be %q, got %q", mainApiKey.Name, actual)
+		}
 	})
 }

@@ -39,3 +39,8 @@ func getRequestApiKey(r *http.Request) (string, bool) {
 	v = v[len("Bearer "):]
 	return v, v != ""
 }
+
+// ApiKeyName returns api key name added by Auth.
+func ApiKeyName(rw http.ResponseWriter) string {
+	return rw.Header().Get(RequestApiKeyName)
+}
