@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/martindrlik/play/auth"
 	"github.com/martindrlik/play/config"
 	"github.com/martindrlik/play/her"
 	"github.com/martindrlik/play/id"
@@ -48,5 +49,11 @@ func handler(config config.Config, produce func(value, key []byte) error) http.H
 }
 
 func cm(config config.Config, hf http.HandlerFunc) http.HandlerFunc {
-	return id.Gen()(limit.Capacity(config.RequestLimit)(measure.Measure(metrics.ObserveDuration, hf)))
+	return id.Gen()( // add X-Request-Id
+		auth.Auth( // 401 or add X-Request-ApiKeyName
+			config,
+			limit.Capacity(config.RequestLimit)( // 429 if no room
+				measure.Measure( // logs duration
+					metrics.ObserveDuration,
+					hf))))
 }
