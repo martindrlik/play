@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/martindrlik/play/auth"
 	"github.com/martindrlik/play/id"
 )
 
@@ -15,6 +16,6 @@ func Measure(observeDuration func(f float64), hf http.HandlerFunc) http.HandlerF
 		hf(rw, r)
 		elapsed := time.Since(start)
 		observeDuration(elapsed.Seconds())
-		log.Printf("(%v) %s%s took %v", id.Get(rw), r.Host, r.URL, elapsed)
+		log.Printf("(%v %v) %s%s took %v", id.Get(rw), auth.ApiKeyName(rw), r.Host, r.URL, elapsed)
 	}
 }

@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/martindrlik/play/auth"
+	"github.com/martindrlik/play/id"
 	"github.com/martindrlik/play/metrics"
 )
 
@@ -34,14 +36,14 @@ func Upload(produce func(value, key []byte) error) http.HandlerFunc {
 		_, err := io.CopyN(value, r.Body, int64(MaxUploadFileLength))
 		if err != nil && err != io.EOF {
 			metrics.UploadReadingBodyError()
-			log.Printf("upload reading body: %v", err)
+			log.Printf("(%v %v) upload reading body: %v", id.Get(rw), auth.ApiKeyName(rw), err)
 			http.Error(rw, "unable to read request body", http.StatusInternalServerError)
 			return
 		}
 		err = produce(value.Bytes(), []byte(name))
 		if err != nil {
 			metrics.UploadStoringError()
-			log.Printf("upload storing body: %v", err)
+			log.Printf("(%v %v) upload storing body: %v", id.Get(rw), auth.ApiKeyName(rw), err)
 			http.Error(rw, "unable to store uploaded content", http.StatusInternalServerError)
 			return
 		}

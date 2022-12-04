@@ -41,7 +41,6 @@ func main() {
 func handler(config config.Config, produce func(value, key []byte) error) http.Handler {
 	h := http.NewServeMux()
 	h.Handle("/metrics", metrics.Handler)
-	//
 	h.HandleFunc("/upload/", cm(config, plugin.Upload(produce)))
 	h.HandleFunc("/analyze/", cm(config, plugin.Analyze))
 	h.HandleFunc("/", cm(config, plugin.Execute))
