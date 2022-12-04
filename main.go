@@ -20,7 +20,7 @@ import (
 
 var (
 	addr = flag.String("addr", ":8085", "listens on the TCP network address addr")
-	conf = flag.String("config", "config.json", "")
+	conf = flag.String("config", "config.json", "configuration file")
 )
 
 func main() {
