@@ -3,15 +3,15 @@ module github.com/martindrlik/play
 go 1.19
 
 require (
-	github.com/martindrlik/play/auth v0.0.0-20221204154831-5474d09a18d0
-	github.com/martindrlik/play/config v0.0.0-20221204122542-0d6a4592e3ec
-	github.com/martindrlik/play/her v0.0.0-20221204154144-54633d13f2f6
-	github.com/martindrlik/play/id v0.0.0-20221204122542-0d6a4592e3ec
-	github.com/martindrlik/play/kafka v0.0.0-20221204122542-0d6a4592e3ec
-	github.com/martindrlik/play/limit v0.0.0-20221204154831-5474d09a18d0
-	github.com/martindrlik/play/measure v0.0.0-20221204154831-5474d09a18d0
-	github.com/martindrlik/play/metrics v0.0.0-20221204154144-54633d13f2f6
-	github.com/martindrlik/play/plugin v0.0.0-20221204154144-54633d13f2f6
+	github.com/martindrlik/play/auth v0.0.0-20221204161314-63d43fbff195
+	github.com/martindrlik/play/config v0.0.0-20221204161808-d3162bdb5992
+	github.com/martindrlik/play/her v0.0.0-20221204161808-d3162bdb5992
+	github.com/martindrlik/play/id v0.0.0-20221204161808-d3162bdb5992
+	github.com/martindrlik/play/kafka v0.0.0-20221204161808-d3162bdb5992
+	github.com/martindrlik/play/limit v0.0.0-20221204161314-63d43fbff195
+	github.com/martindrlik/play/measure v0.0.0-20221204161314-63d43fbff195
+	github.com/martindrlik/play/metrics v0.0.0-20221204161808-d3162bdb5992
+	github.com/martindrlik/play/plugin v0.0.0-20221204161808-d3162bdb5992
 )
 
 require (
