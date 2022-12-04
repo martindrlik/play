@@ -10,7 +10,7 @@ import (
 
 func TestId(t *testing.T) {
 	rid := ""
-	id.Gen()(func(rw http.ResponseWriter, r *http.Request) {
+	id.Gen(func(rw http.ResponseWriter, r *http.Request) {
 		rid = id.Get(rw)
 	})(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/", nil))
 	if rid == "" {
