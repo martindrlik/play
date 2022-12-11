@@ -144,9 +144,6 @@ github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFB
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/martindrlik/play/config v0.0.0-20221204164017-9cea5ec71ecf h1:ciI+LsnTJGBtBbmBZAHXhS+X15/QehAHrsUqkrhdGXo=
-github.com/martindrlik/play/config v0.0.0-20221204164017-9cea5ec71ecf/go.mod h1:QJ8SL40ewvb6NVQDqhbFbStDVe9XrdBfJLK3CCXdLYQ=
-github.com/martindrlik/play/her v0.0.0-20221203214305-591b9ca2c078 h1:6BaCeBsOriY/FYPdzvxvB4hXJe9pekTcR77DPHhu7bc=
 github.com/martindrlik/play/id v0.0.0-20221204164017-9cea5ec71ecf h1:ssH6r0ihQATrDLO96VOgyYmtIMpCKiIg3XeQu6uBIeM=
 github.com/martindrlik/play/id v0.0.0-20221204164017-9cea5ec71ecf/go.mod h1:T+XSDN0vSqlNR9eAPgq3Dry2FH20BdR5afmf8h1rTmg=
 github.com/martindrlik/play/metrics v0.0.0-20221204164017-9cea5ec71ecf h1:Hbn4mpFfo+s7nGV981wGcfQJd9cRGGuQu69QQEKuooI=

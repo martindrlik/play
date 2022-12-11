@@ -3,7 +3,6 @@ module github.com/martindrlik/play/auth
 go 1.19
 
 require (
-	github.com/martindrlik/play/config v0.0.0-20221204164017-9cea5ec71ecf
 	github.com/martindrlik/play/id v0.0.0-20221204164017-9cea5ec71ecf
 	github.com/martindrlik/play/metrics v0.0.0-20221204164017-9cea5ec71ecf
 )

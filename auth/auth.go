@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/martindrlik/play/config"
 	"github.com/martindrlik/play/id"
 	"github.com/martindrlik/play/metrics"
 )
@@ -13,16 +12,14 @@ import (
 var RequestApiKeyName = "X-Request-ApiKeyName"
 
 // Auth wraps http handler in order to authenticate request.
-func Auth(config config.Config, hf http.HandlerFunc) http.HandlerFunc {
-	apiKeyNameByValue := make(map[string]string)
-	for _, apiKey := range config.ApiKeys {
-		apiKeyNameByValue[apiKey.Value] = apiKey.Name
-	}
+// For authentication it uses nameByApiKey where key is an
+// api key and value is api key name.
+func Auth(nameByApiKey map[string]string, hf http.HandlerFunc) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		apiKeyValue, ok := getRequestApiKey(r)
 		apiKeyName := ""
 		if ok {
-			apiKeyName, ok = apiKeyNameByValue[apiKeyValue]
+			apiKeyName, ok = nameByApiKey[apiKeyValue]
 		}
 		if !ok {
 			metrics.AuthError()
