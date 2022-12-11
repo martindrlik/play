@@ -7,7 +7,6 @@ import (
 	"context"
 	"flag"
 	"net/http"
-	"os"
 
 	"github.com/martindrlik/play/auth"
 	"github.com/martindrlik/play/config"
@@ -29,10 +28,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg := her.Must(os.Open(*conf))
-	defer cfg.Close()
-
-	config := her.Must(config.Load(cfg))
+	config := her.Must(loadConfig(*conf))
 	go consumeMessages(ctx, config)
 	produce := producer(ctx, config)
 	her.Must1(http.ListenAndServe(*addr, handler(config, produce)))
@@ -42,15 +38,21 @@ func handler(config config.Config, produce func(value, key []byte) error) http.H
 	h := http.NewServeMux()
 	h.Handle("/metrics", metrics.Handler)
 	// api key authenticated
+	acm := makeacm(config)
 	h.HandleFunc("/upload/", id.Gen(acm(config, plugin.Upload(produce))))
 	h.HandleFunc("/analyze/", id.Gen(acm(config, plugin.Analyze)))
 	h.HandleFunc("/", id.Gen(acm(config, plugin.Execute)))
 	return h
 }
 
-// acm adds request authentication to hf otherwise the same as cm.
-func acm(config config.Config, hf http.HandlerFunc) http.HandlerFunc {
-	return auth.Auth(config, cm(config, hf))
+func makeacm(c config.Config) func(config.Config, http.HandlerFunc) http.HandlerFunc {
+	nameByApiKey := map[string]string{}
+	for _, v := range c.ApiKeys {
+		nameByApiKey[v.Value] = v.Name
+	}
+	return func(config config.Config, hf http.HandlerFunc) http.HandlerFunc {
+		return auth.Auth(nameByApiKey, cm(config, hf))
+	}
 }
 
 // cm wraps hf to limit in-fligh requests and to measure handler's performance.
